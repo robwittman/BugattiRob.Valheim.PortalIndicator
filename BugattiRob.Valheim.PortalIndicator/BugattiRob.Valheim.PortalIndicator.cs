@@ -2,6 +2,7 @@ using BepInEx;
 using Jotunn.Entities;
 using Jotunn.Managers;
 using Jotunn.Utils;
+using UnityEngine;
 
 namespace BugattiRob.Valheim.PortalIndicator
 {
