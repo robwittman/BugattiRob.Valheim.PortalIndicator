@@ -1,13 +1,19 @@
+using System;
+using System.Collections;
+using System.Collections.Generic;
 using BepInEx;
+using HarmonyLib;
 using Jotunn.Entities;
 using Jotunn.Managers;
 using Jotunn.Utils;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 namespace BugattiRob.Valheim.PortalIndicator
 {
     [BepInPlugin(PluginGUID, PluginName, PluginVersion)]
     [BepInDependency(Jotunn.Main.ModGuid)]
+    [BepInDependency("yay.spikehimself.xportal")]
     [NetworkCompatibility(CompatibilityLevel.EveryoneMustHaveMod, VersionStrictness.Minor)]
     internal class PortalIndicator : BaseUnityPlugin
     {
@@ -19,20 +25,55 @@ namespace BugattiRob.Valheim.PortalIndicator
         // https://valheim-modding.github.io/Jotunn/tutorials/localization.html
         public static CustomLocalization Localization = LocalizationManager.Instance.GetLocalization();
 
+        private static bool mapAvailable = false;
+
+        private static readonly Harmony patcher = new Harmony(PluginGUID + ".harmony");
+
         private void Awake()
         {
             // Jotunn comes with its own Logger class to provide a consistent Log style for all mods using it
             Jotunn.Logger.LogInfo("BugattiRob.Valheim.PortalIndicator has landed");
-            
-            // To learn more about Jotunn's features, go to
-            // https://valheim-modding.github.io/Jotunn/tutorials/overview.html
 
-            MinimapManager.OnVanillaMapAvailable += CreateMapOverlay;
+          
+            MinimapManager.OnVanillaMapDataLoaded += markMapEnabled;
+
+            patcher.PatchAll(typeof(Patches.Game_Start));
         }
 
-        private void CreateMapOverlay()
+        private void OnDestroy()
         {
-            // Get or create a map overlay instance by name
+            mapAvailable = false;
+        }
+
+       private void markMapEnabled() 
+        {
+            mapAvailable = true;
+        }
+
+        // [Error  : Unity Log] ArgumentException: An item with the same key has already been added. Key: 1683704696
+        Stack trace:
+System.Collections.Generic.Dictionary`2[TKey, TValue].TryInsert(TKey key, TValue value, System.Collections.Generic.InsertionBehavior behavior) (at<834b2ded5dad441e8c7a4287897d63c7>:0)
+System.Collections.Generic.Dictionary`2[TKey, TValue].Add(TKey key, TValue value) (at<834b2ded5dad441e8c7a4287897d63c7>:0)
+ZRoutedRpc.Register[T] (System.String name, System.Action`2[T1, T2] f) (at<dbd2a6fbcde9498cadcacfb37ef883e3>:0)
+BugattiRob.Valheim.PortalIndicator.RPCManager.Register() (at C:/Users/robkw/Repos/robwittman/BugattiRob.Valheim.PortalIndicator/BugattiRob.Valheim.PortalIndicator/RPCManager.cs:17)
+BugattiRob.Valheim.PortalIndicator.PortalIndicator.GameStarted() (at C:/Users/robkw/Repos/robwittman/BugattiRob.Valheim.PortalIndicator/BugattiRob.Valheim.PortalIndicator/BugattiRob.Valheim.PortalIndicator.cs:54)
+BugattiRob.Valheim.PortalIndicator.Patches.Game_Start.Postfix() (at C:/Users/robkw/Repos/robwittman/BugattiRob.Valheim.PortalIndicator/BugattiRob.Valheim.PortalIndicator/Patches/Game.cs:13)
+(wrapper dynamic-method) Game.DMD<Game::Start>(Game)
+        internal static void GameStarted()
+        {
+            Jotunn.Logger.LogInfo("Registering RPCs");
+            RPCManager.Register();
+        }
+
+
+        private void CreateMapDrawing()
+        {
+            // var pinOverlay = MinimapManager.Instance.GetMapDrawing("PinOverlay");
+            // foreach (ZDO zdo in zdoMan.m_portalObjects)
+            // {
+            //    string portalTag = zdo.GetString(ZDOVars.s_tag, string.Empty);
+            //}
+                // Get or create a map overlay instance by name
             var zoneOverlay = MinimapManager.Instance.GetMapOverlay("ZoneOverlay");
 
             // Create a Color array with space for every pixel of the map
