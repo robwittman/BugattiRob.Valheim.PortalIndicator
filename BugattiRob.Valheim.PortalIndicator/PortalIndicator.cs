@@ -4,12 +4,19 @@ using Jotunn.Entities;
 using Jotunn.Managers;
 using Jotunn.Utils;
 using UnityEngine;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using HarmonyLib;
+using static Mono.Security.X509.X520;
 
 namespace BugattiRob.Valheim.PortalIndicator
 {
     [BepInPlugin(PluginGUID, PluginName, PluginVersion)]
     [BepInDependency(Jotunn.Main.ModGuid)]
-    //[NetworkCompatibility(CompatibilityLevel.EveryoneMustHaveMod, VersionStrictness.Minor)]
+    [NetworkCompatibility(CompatibilityLevel.EveryoneMustHaveMod, VersionStrictness.Minor)]
     internal class PortalIndicator : BaseUnityPlugin
     {
         public const string PluginGUID = "bugattirob.valheim.portalindicator";
@@ -29,7 +36,7 @@ namespace BugattiRob.Valheim.PortalIndicator
             // https://valheim-modding.github.io/Jotunn/tutorials/overview.html
 
             MinimapManager.OnVanillaMapAvailable += MinimapManager_OnVanillaMapDataLoaded;
-
+            
             Patches.Patcher.Patch();
         }
 
@@ -50,9 +57,10 @@ namespace BugattiRob.Valheim.PortalIndicator
 
         public static void UpdateFromPackage(ZPackage pkg)
         {
-            var portalOverlay = MinimapManager.Instance.GetMapDrawing("PortalOverlay");
+            var portalOverlay = MinimapManager.Instance.GetMapOverlay("PortalOverlay");
             Log.Info("Here, we should update the client's map with all portal pins");
             var count = pkg.ReadInt();
+
 
             Log.Info($"Received {count} portals from server");
 
@@ -64,18 +72,14 @@ namespace BugattiRob.Valheim.PortalIndicator
                     var tag = portalPkg.ReadString();
                     var location = portalPkg.ReadVector3();
                     Log.Info($"Client writing {tag} to {location}");
-                    // var pos = MinimapManager.Instance.WorldToOverlayCoords(location, portalOverlay.TextureSize);
 
-                    Minimap.instance.AddPin(location, Minimap.PinType.Icon4, tag, true, false);
-                    //portalOverlay.MainTex.SetPixels((int)pos.x, (int)pos.y, squareSize, squareSize, colorPixels);
-
-
-                    //portalOverlay.MainTex.Apply();
-                    //portalOverlay.FogFilter.Apply();
-                    //portalOverlay.ForestFilter.Apply();
-                    //portalOverlay.HeightFilter.Apply();
+                    //var pinData = Minimap.instance.AddPin(location, Minimap.PinType.Icon4, tag, true, false);
+                    Log.Info($"We should have written {tag} to the map");
                 }
             }
+
+            portalOverlay.OverlayTex.Apply();
+            return;
         }
 
         public static void ProcessSyncRequest()
